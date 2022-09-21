@@ -1,10 +1,16 @@
 // In this file, the code for the actual tool will live
 #include <bits/stdc++.h> 
-const int MAX_ARGUMENTS = 2;
+#include <curlpp/cURLpp.hpp>
+#include <curlpp/Easy.hpp>
+#include <curlpp/Options.hpp>
+const int MAX_ARGUMENTS = 3;
 using namespace std;
-void defaultCommand()
+curlpp::Cleanup cleanup;
+string key = "https://api.binance.com/api/v3/ticker/price?symbol=BTCUSDT";
+
+void getPrice()
 {
-    cout<<"This is the default command\n";
+    cout<<curlpp::options::Url(key);
 }
 
 void helpCommand()
@@ -33,7 +39,7 @@ int main(int argc, char*argv[]){
 
     if(argc == 1)
     {
-        defaultCommand();
+        getPrice();
         return 0;
     }
     //Parse flags
@@ -44,7 +50,7 @@ int main(int argc, char*argv[]){
         break;
     
     default:
-        defaultCommand();
+        getPrice();
         break;
     }
 
