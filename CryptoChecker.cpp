@@ -4,55 +4,86 @@
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
+#include <json/json.h>
+
 constexpr int MAX_ARGUMENTS = 3;
 using namespace std;
-curlpp::Cleanup cleanup;
 
-vector<pair<string, string>> get_price(vector<pair<string, string>>& returnVec)
+curlpp::Cleanup cleanup;
+Json::Value jsonData;
+Json::Reader jsonReader;
+
+// API Queries
+vector<pair<string, string>> get_price(vector<pair<string, string>>& returnVec, string search = " ")
 {
+    stringstream stringQuery;
     const string key = "https://api.binance.com/api/v3/ticker/price?symbol=";
     vector<string> defaultCryptos = {"BTCUSDT","ETHUSDT","BNBUSDT","BUSDUSDT","XRPUSDT","ADAUSDT","SOLUSDT"};
     for(auto& crypto :defaultCryptos)
     {
-        cout<<curlpp::options::Url(key+crypto)<<"\n";
+        stringQuery<<curlpp::options::Url(key+crypto);
+        jsonReader.parse(stringQuery, jsonData);
+        returnVec.push_back(make_pair(crypto, jsonData["price"].asString()));
     }
     return returnVec;
 }
-
+// Command functions
 void help_command()
 {
     cerr<<"Welcome to Crypto Checker!!\n"
+    "-----------------------------\n"
     "The command scheme is as follows\n"
-    "---------------------------------\n"
     "-h    Print out help menu\n"
+    "-T    See 7 most popular cryptos in USD"
     "-C    Specify which crypto to check\n"   
     "  -C b  Check Bitcoin\n"
     "  -C e  Check Etherium\n"
     "  -C s  Check Solona\n";
 }
 
-int main(int argc, char*argv[]){
+void topCommand(){
     vector<pair<string, string>> defaultResult;
-    // Sanity check to determine if arguments passed are accepted
-    if(argc > (MAX_ARGUMENTS+1))
-    {
-        cout<<"Too many parameters\n";
-        return -1;
+    cerr<<"CRYPTO CURRENY | PRICE \n"
+        "-----------------------\n";
+    get_price(defaultResult);
+    for(auto& result: defaultResult){
+        cerr<<result.first<<"    | "<<result.second<<endl;
     }
-    if(argc == 1)
-    {
-        get_price(defaultResult);
-        return 0;
-    }
+}
+
+void searchCommand(){
+    
+}
+
+int main(int argc, char*argv[]){
+    string flagValue;
     //Parse flags
-    switch (getopt(argc,argv,"hC:M:"))
+    switch (getopt(argc,argv,"hTC:M:"))
     {
     case 'h':
         help_command();
         break;
+    case 'T':
+        topCommand();
+        break;
+    case 'C':
+        flagValue = optarg;
+        if(flagValue == "b")
+        {
+            cout<<"Checks Bitcoint"<<endl;
+        }
+        if(flagValue == "e")
+        {
+            cout<<"Checks Etherium"<<endl;
+        }
+        if(flagValue == "s")
+        {
+            cout<<"Checks Solona"<<endl;
+        }
+        break;
     
     default:
-        get_price(defaultResult);
+        help_command();
         break;
     }
 }
