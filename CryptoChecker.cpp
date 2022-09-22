@@ -13,12 +13,30 @@ curlpp::Cleanup cleanup;
 Json::Value jsonData;
 Json::Reader jsonReader;
 
+vector<string> spliter(string rawQuery)
+{
+    vector<string> returnVec;
+    stringstream rawString;
+    rawString << rawQuery;
+    while (rawString.good())
+    {
+        string coin;
+        getline(rawString, coin, ',');
+        returnVec.push_back(coin + "USDT");
+    }
+    return returnVec;
+}
+
 // API Queries
 vector<pair<string, string>> get_price(vector<pair<string, string>>& returnVec, string search = " ")
 {
     stringstream stringQuery;
     const string key = "https://api.binance.com/api/v3/ticker/price?symbol=";
     vector<string> defaultCryptos = {"BTCUSDT","ETHUSDT","BNBUSDT","BUSDUSDT","XRPUSDT","ADAUSDT","SOLUSDT"};
+    if(search != " ")
+    {
+        defaultCryptos = spliter(search);
+    }
     for(auto& crypto :defaultCryptos)
     {
         stringQuery<<curlpp::options::Url(key+crypto);
@@ -34,52 +52,46 @@ void help_command()
     "-----------------------------\n"
     "The command scheme is as follows\n"
     "-h    Print out help menu\n"
-    "-T    See 7 most popular cryptos in USD"
-    "-C    Specify which crypto to check\n"   
-    "  -C b  Check Bitcoin\n"
-    "  -C e  Check Etherium\n"
-    "  -C s  Check Solona\n";
+    "-t    See 7 most popular cryptos in USD\n"
+    "-s    Search for a crypto or cryptos separates with commas and no space\n";
 }
 
 void topCommand(){
     vector<pair<string, string>> defaultResult;
+    get_price(defaultResult);
     cerr<<"CRYPTO CURRENY | PRICE \n"
         "-----------------------\n";
-    get_price(defaultResult);
     for(auto& result: defaultResult){
         cerr<<result.first<<"    | "<<result.second<<endl;
     }
 }
 
-void searchCommand(){
-    
+void search_command(string search){
+    vector<pair<string, string>> defaultResult;
+    get_price(defaultResult, search);
+     cerr<<"CRYPTO CURRENY | PRICE \n"
+        "-----------------------\n";
+    for(auto& result: defaultResult){
+        cerr<<result.first<<"    | "<<result.second<<endl;
+    }
 }
 
 int main(int argc, char*argv[]){
     string flagValue;
     //Parse flags
-    switch (getopt(argc,argv,"hTC:M:"))
+    switch (getopt(argc,argv,"hts:M:"))
     {
     case 'h':
         help_command();
         break;
-    case 'T':
+
+    case 't':
         topCommand();
         break;
-    case 'C':
+
+    case 's':
         flagValue = optarg;
-        if(flagValue == "b")
-        {
-            cout<<"Checks Bitcoint"<<endl;
-        }
-        if(flagValue == "e")
-        {
-            cout<<"Checks Etherium"<<endl;
-        }
-        if(flagValue == "s")
-        {
-            cout<<"Checks Solona"<<endl;
-        }
+        search_command(flagValue);
         break;
     
     default:
