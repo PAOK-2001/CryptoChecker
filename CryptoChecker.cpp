@@ -1,27 +1,40 @@
 // In this file, the code for the actual tool will live
 #include <bits/stdc++.h> 
-#include<iostream>
+#include <iostream>
 #include <curlpp/cURLpp.hpp>
 #include <curlpp/Easy.hpp>
 #include <curlpp/Options.hpp>
 #include <json/json.h>
 #include "SylizedCout.h"
 
-constexpr int MAX_ARGUMENTS = 3;
 using namespace std;
 
-bool sortbysec(const pair<string,string> &a,
-              const pair<string,string> &b){
-    return (stof(a.second) > stof(b.second));
+curlpp::Cleanup cleanup;
+curlpp::Easy request;
+Json::Reader jsonReader;
+Json::Value priceData, conversionData;
+
+float conversion_factor(string destinyCurrency){
+    if(destinyCurrency == "USD"){
+        return 1.0;
+    }
+    list<string> header = {"apikey: Dtb873D74x5NBWCNTcXqllXToJouDWJi"}; 
+    stringstream factor;
+    request.setOpt(new curlpp::options::Url("https://api.apilayer.com/currency_data/convert?to="+destinyCurrency+"&from=USD&amount=1"));
+    request.setOpt(new curlpp::options::HttpHeader(header));
+    request.setOpt(new curlpp::options::WriteStream(&factor));
+    request.perform();
+    jsonReader.parse(factor, conversionData);
+    return stod(conversionData["result"].asString());
 }
 
-void sortOperation(vector<pair<string, string>> &cryptos){
+bool sortbysec(const pair<string,float> &a, const pair<string,float> &b){
+    return (a.second > b.second);
+}
+
+void sortOperation(vector<pair<string, float>> &cryptos){
     sort(cryptos.begin(), cryptos.end(), sortbysec);
 }
-
-curlpp::Cleanup cleanup;
-Json::Value jsonData;
-Json::Reader jsonReader;
 
 vector<string> spliter(string rawQuery)
 {
@@ -38,7 +51,7 @@ vector<string> spliter(string rawQuery)
 }
 
 // API Queries
-vector<pair<string, string>> get_price(vector<pair<string, string>>& returnVec, string search = " ")
+vector<pair<string, float>> get_price(vector<pair<string, float>>& returnVec, string search = " ", string convert ="USD")
 {
     stringstream stringQuery;
     const string key = "https://api.binance.com/api/v3/ticker/price?symbol=";
@@ -50,8 +63,8 @@ vector<pair<string, string>> get_price(vector<pair<string, string>>& returnVec, 
     for(auto& crypto :defaultCryptos)
     {
         stringQuery<<curlpp::options::Url(key+crypto);
-        jsonReader.parse(stringQuery, jsonData);
-        returnVec.push_back(make_pair(crypto, jsonData["price"].asString()));
+        jsonReader.parse(stringQuery, priceData);
+        returnVec.push_back(make_pair(crypto, stod(priceData["price"].asString())*conversion_factor(convert)));
     }
     sortOperation(returnVec);
     return returnVec;
@@ -68,7 +81,7 @@ void help_command()
 }
 
 void topCommand(){
-    vector<pair<string, string>> defaultResult;
+    vector<pair<string, float>> defaultResult;
     get_price(defaultResult);
     cerr<<endl<<BOLD(BLUE("CRYPTO CURRENY"))<<BOLD(" | ")<<BOLD(BLUE("PRICE \n"));
     cerr<<BOLD("-----------------------\n");
@@ -89,7 +102,7 @@ void topCommand(){
 }
 
 void search_command(string search){
-    vector<pair<string, string>> defaultResult;
+    vector<pair<string, float>> defaultResult;
     get_price(defaultResult, search);
     cerr<<endl<<BOLD(BLUE("CRYPTO CURRENY"))<<BOLD(" | ")<<BOLD(BLUE("PRICE \n"));
     cerr<<BOLD("-----------------------\n");
@@ -102,7 +115,7 @@ void search_command(string search){
 int main(int argc, char*argv[]){
     string flagValue;
     //Parse flags
-    switch (getopt(argc,argv,"hts:M:"))
+    switch (getopt(argc,argv,"hts:m:"))
     {
     case 'h':
         help_command();
@@ -116,7 +129,7 @@ int main(int argc, char*argv[]){
         flagValue = optarg;
         search_command(flagValue);
         break;
-    
+
     default:
         help_command();
         break;
