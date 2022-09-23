@@ -1,4 +1,23 @@
 # Crypto Checker: CLI Tool
+## Instalation
+To use this tool, clone this repository and navigate to it on terminal. Run the installer script (you might need to change the file permissions using chmod), taking note to change the <em>dir</em> variable with the direction of your PATH folder. Running the instaler will compile the tool and add the binary to path, making the **CryptoChecker** command globally accesible.
+
+```console
+[paok@fedora ~]$ cd Documents/CryptoChecker/
+[paok@fedora CryptoChecker]$ ./installer.sh 
+[sudo] password for paok: 
+[paok@fedora CryptoChecker]$ CryptoChecker 
+
+Welcome to Crypto Checker!!
+-----------------------------
+The command scheme is as follows
+-h| --help      Print out help menu
+-t| --top       See 7 most popular cryptos in USD
+-s| --search    Search for a one or multiple cryptos separated with commas and no space. Specify the  abreviation ie. BTC
+-c| --customcurreny See the top cryptos in a specified currency, specified after flag. Specify abreviation ie. MXN
+
+```
+
 ## Inspiration
 We wanted to provide a quick and easy way to access cryptocurrency price information, locate the top of the most popular ones as well as be able to access individual information on each of them or a desired list.
 
