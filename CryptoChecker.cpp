@@ -13,8 +13,10 @@ curlpp::Cleanup cleanup;
 curlpp::Easy request;
 Json::Reader jsonReader;
 Json::Value priceData, conversionData;
-
-long conversion_factor(string destinyCurrency){
+// conversion_ factor: Get factor to convert USD to inputed currency.
+// @param destinyCurrency String of the currency to convert to.
+// @returns A float representing conversion from USD to said currency.
+float conversion_factor(string destinyCurrency){
     if(destinyCurrency == "USD"){
         return 1.0;
     }
@@ -27,15 +29,17 @@ long conversion_factor(string destinyCurrency){
     jsonReader.parse(factor, conversionData);
     return stod(conversionData["result"].asString());
 }
-
-bool sortbysec(const pair<string,long> &a, const pair<string,long> &b){
+// Auxiliary function to compare second value of a pair
+bool sortbysec(const pair<string,float> &a, const pair<string,float> &b){
     return (a.second > b.second);
 }
-
-void sort_operation(vector<pair<string, long>> &cryptos){
+// Sort a vector of pairs passed by reference
+void sort_operation(vector<pair<string, float>> &cryptos){
     sort(cryptos.begin(), cryptos.end(), sortbysec);
 }
-
+// spliter: separate the words in a string by commas.
+// @param rawQuery String of words to separate.
+// @returns Vector of strings containing separated words.
 vector<string> spliter(string rawQuery)
 {
     vector<string> returnVec;
@@ -49,11 +53,14 @@ vector<string> spliter(string rawQuery)
     }
     return returnVec;
 }
-
-// API Queries
-vector<pair<string, long>> get_price(vector<pair<string, long>>& returnVec, string search = " ", string convert ="USD")
+// get_price: get prices for searched cryptos.
+// @param returnVec Vector of pairs passed by referenc to store queried information.
+// @param search   String containing the crytos to search. If left blank a predetermined list of crytos will be used.
+// @param convert  String containing the currency to convert to. If left blank, it will be USD.
+void get_price(vector<pair<string, float>>& returnVec, string search = " ", string convert ="USD")
 {
     stringstream stringQuery;
+    float currencyFactor = conversion_factor(convert);
     const string key = "https://api.binance.com/api/v3/ticker/price?symbol=";
     vector<string> defaultCryptos = {"BTCUSDT","ETHUSDT","BNBUSDT","BUSDUSDT","XRPUSDT","ADAUSDT","SOLUSDT"};
     if(search != " ")
@@ -64,12 +71,11 @@ vector<pair<string, long>> get_price(vector<pair<string, long>>& returnVec, stri
     {
         stringQuery<<curlpp::options::Url(key+crypto);
         jsonReader.parse(stringQuery, priceData);
-        returnVec.push_back(make_pair(crypto, stod(priceData["price"].asString())*conversion_factor(convert)));
+        returnVec.push_back(make_pair(crypto, stod(priceData["price"].asString())*currencyFactor));
     }
     sort_operation(returnVec);
-    return returnVec;
 }
-// Command functions
+// help_command : Displays the command scheme.
 void help_command()
 {
     cerr<<endl<<BOLD(GREEN("Welcome to Crypto Checker!!"))<<endl;
@@ -81,13 +87,13 @@ void help_command()
     cerr<<BOLD(BLUE("-c"))<<BOLD("| --customcurreny")<<" See the top cryptos in a specified currency, specified after flag. Specify abreviation ie. MXN"<<endl<<endl;
 
 }
-
+// top_command : calls get_price() with default search and currency values. Displays results in terminal. 
 void top_command(){
-    vector<pair<string, long>> defaultResult;
+    vector<pair<string, float>> defaultResult;
     get_price(defaultResult);
     cerr<<endl<<BOLD(BLUE("CRYPTO CURRENY"))<<BOLD(" | ")<<BOLD(BLUE("PRICE \n"));
     cerr<<BOLD("-----------------------\n");
-    int i = 0;
+    int i = 0; // Add counter to formar first and last values accordingly.
     for(auto& result: defaultResult){
         if(i == 0)
         {
@@ -102,9 +108,9 @@ void top_command(){
     }
     cerr<<endl;
 }
-
+// search_command() : calls get_price() with custom search query.
 void search_command(string search){
-    vector<pair<string, long>> defaultResult;
+    vector<pair<string, float>> defaultResult;
     get_price(defaultResult, search);
     cerr<<endl<<BOLD(BLUE("CRYPTO CURRENY"))<<BOLD(" | ")<<BOLD(BLUE("PRICE \n"));
     cerr<<BOLD("-----------------------\n");
@@ -113,13 +119,13 @@ void search_command(string search){
     }
     cerr<<endl;
 }
-
+// custom_currency: call get_price() with custom currency value.
 void custom_currency(string currency){
-    vector<pair<string, long>> defaultResult;
+    vector<pair<string, float>> defaultResult;
     get_price(defaultResult," ",currency);
     cerr<<endl<<BOLD(BLUE("CRYPTO CURRENY"))<<BOLD(" | ")<<BOLD(BLUE("PRICE \n"));
     cerr<<BOLD("-----------------------\n");
-    int i = 0;
+    int i = 0; // Add counter to formar first and last values accordingly.
     for(auto& result: defaultResult){
         if(i == 0)
         {
